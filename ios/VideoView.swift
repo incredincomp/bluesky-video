@@ -258,8 +258,10 @@ class VideoView: ExpoView, AVPlayerViewControllerDelegate {
       forInterval: interval,
       queue: .main
     ) { [weak self] time in
-      guard let strongSelf = self,
-            let duration = strongSelf.player?.currentItem?.duration else {
+      guard let self = self,
+        let duration = self.player?.currentItem?.duration else {
+        return
+      }
         return
       }
       
@@ -273,17 +275,19 @@ class VideoView: ExpoView, AVPlayerViewControllerDelegate {
       guard duration.seconds.isFinite && duration.seconds > 0 else {
         // Duration seconds is NaN, infinite, or non-positive - skip update
         return
+      // Validate current time is also finite and positive
+      guard time.seconds.isFinite && time.seconds >= 0 else {
+        // Current time is invalid - skip this time update
+        return
       }
       
-      // Validate current time is also finite
-      let currentSeconds = time.seconds.isFinite ? time.seconds : 0
-      
       // Calculate time remaining with defensive arithmetic
-      let rawTimeRemaining = duration.seconds - currentSeconds
+      let rawTimeRemaining = duration.seconds - time.seconds
+
       // Ensure result is finite and non-negative
       let timeRemaining = rawTimeRemaining.isFinite ? max(0, rawTimeRemaining).rounded() : 0
-      
-      strongSelf.onTimeRemainingChange([
+
+      self.onTimeRemainingChange([
         "timeRemaining": timeRemaining
       ])
     }
